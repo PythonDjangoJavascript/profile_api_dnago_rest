@@ -8,8 +8,10 @@ def client():
         'password': '1234'
     }
 
-    response = requests.post("http://127.0.0.1:8000/api/rest-auth/login/",
-                             data=credientials)
+    # response = requests.post("http://127.0.0.1:8000/api/rest-auth/login/",
+    #                          data=credientials)
+
+    response = requests.get("http: // 127.0.0.1: 8000/api/profiles")
 
     print("status code: ", response.status_code)
     response_data = response.json()
