@@ -24,6 +24,6 @@ urlpatterns = [
     path('api/rest-auth/', include('rest_auth.urls')),
     path('api-auth/', include('rest_framework.urls')),
 
-    path('api/', include('profiles.urls')),
+    path('api/', include('profiles.api.urls')),
 
 ]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
