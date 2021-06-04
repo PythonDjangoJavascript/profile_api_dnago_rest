@@ -15,6 +15,5 @@ def create_profile(sender, instance, created, **kwargs):
     """This fucntion is incharge of creating a new profile instance
     every time a user instance is created"""
 
-    print("Created", created)
     if created:
         Profile.objects.create(user=instance)
