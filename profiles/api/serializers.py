@@ -26,6 +26,10 @@ class ProfileAvatarSerializer(serializers.ModelSerializer):
 class ProfileStatusSerializer(serializers.ModelSerializer):
     """Serializes Profile status model"""
 
+    # setting user profile to read only to prevent update other users status
+    # here String relatedfield will show the str(user_profile) insted of id
+    user_profile = serializers.StringRelatedField(read_only=True)
+
     class Meta:
         model = ProfileStatus
         fields = "__all__"
