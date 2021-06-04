@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import viewsets
 from rest_framework import mixins
+from rest_framework.filters import SearchFilter
 
 from profiles.models import Profile, ProfileStatus
 from profiles.api.pemissions import IsOwnProfileOrReadOnly, IsOwnStatusOrReadOnly
@@ -38,6 +39,9 @@ class ProfileViewSet(mixins.UpdateModelMixin,
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
     permission_classes = [IsAuthenticated, IsOwnProfileOrReadOnly]
+    # lets now add filter option
+    filter_backends = [SearchFilter]
+    search_fields = ["city"]
 
 # class ProfileViewSet(ReadOnlyModelViewSet):
 #     """manages profile api endpoints views"""
@@ -51,9 +55,21 @@ class ProfileViewSet(mixins.UpdateModelMixin,
 # retrieve and genericsViewset > check ModelViewSet Code
 class ProfileStatusViewSet(ModelViewSet):
     """Handle list, retrieve, update, delete profile status api view"""
-    queryset = ProfileStatus.objects.all()
+    # queryset = ProfileStatus.objects.all()
     serializer_class = ProfileStatusSerializer
     permission_classes = [IsAuthenticated, IsOwnStatusOrReadOnly]
+
+    def get_queryset(self):
+        """Overriding get_queryset fucntion to add filter by username option"""
+
+        queryset = ProfileStatus.objects.all()
+        username = self.request.query_params.get('username', None)
+
+        if username is not None:
+            # in status object -> user_profile.user.username
+            # here double _ means .
+            queryset = queryset.filter(user_profile__user__username=username)
+        return queryset
 
     def perform_create(self, serializer):
         """overriding create method as user should be only allowed to create

@@ -16,7 +16,9 @@ from profiles.api.views import (ProfileViewSet,
 router = DefaultRouter()
 # here router will generate links of different endpoints by itsalfe
 router.register(r"profiles", ProfileViewSet)
-router.register(r"status", ProfileStatusViewSet)
+# need to define basename as I override get_queryset method
+# because now it does not have .queryset
+router.register(r"status", ProfileStatusViewSet, basename='status')
 
 urlpatterns = [
     path('profileslv/', ProfileList.as_view(), name='profile-lis'),
