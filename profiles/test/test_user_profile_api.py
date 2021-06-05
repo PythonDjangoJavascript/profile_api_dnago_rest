@@ -7,8 +7,8 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from profiles.api.serializers import ProfileSerializer
-from profiles.models import Profile
+from profiles.api.serializers import ProfileSerializer, ProfileStatusSerializer
+from profiles.models import Profile, ProfileStatus
 
 
 # create user method
@@ -133,5 +133,95 @@ class ProfileViewSetTestCase(APITestCase):
 
         res = self.client.put(self.PROFILE_DETAIL_URL,
                               {'bio': 'hacked!!'})
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class ProfileStatusViewSetTestCase(APITestCase):
+    """Test Prilfe status endpoints"""
+
+    # its status-list as we use router for urls and it will add list at the
+    # end as name path(...., ...., name='status-list')
+    LIST_URL = reverse('status-list')
+
+    def setUp(self) -> None:
+        """this function will run before every test method"""
+
+        payload = {
+            'username': 'test_status',
+            'email': 'test@email.com',
+            'password': 'superSecurePassword',
+        }
+        self.user = create_user(**payload)
+        self.status = ProfileStatus.objects.create(user_profile=self.user.profile,
+                                                   status_content='hello world')
+        self.token = Token.objects.create(user=self.user)
+        self.api_authentication()
+
+    def api_authentication(self):
+        self.client.credentials(HTTP_AUTHORIZATION="Token "+self.token.key)
+
+    def test_status_list_authenticated(self):
+        """test authenticated user can retrieve statuses list"""
+
+        res = self.client.get(self.LIST_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+
+    def test_unauthorized_tatus_list_request(self):
+        """Test user need to login to view statuses"""
+
+        self.client.force_authenticate(user=None)
+        res = self.client.get(self.LIST_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_create_status(self):
+        """Test user can create status"""
+
+        payload = {
+            "status_content": "a new Test status"
+        }
+        res = self.client.post(self.LIST_URL, data=payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data['user_profile'], 'test_status')
+        self.assertEqual(res.data['status_content'], 'a new Test status')
+
+    def test_status_detail_retireve(self):
+        """Test user can retrieve single status detal"""
+
+        serializer_data = ProfileStatusSerializer(instance=self.status)
+        res = self.client.get(reverse('status-detail', kwargs={'pk': 1}))
+
+        self.assertEqual(res.data, serializer_data.data)
+
+    def test_status_update_by_owneer(self):
+        """Test youser can updlate their status"""
+
+        payload = {
+            "status_content": "updated status"
+        }
+        res = self.client.put(reverse('status-detail', kwargs={'pk': 1}),
+                              data=payload)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['status_content'], 'updated status')
+
+    def test_status_update_by_randon_user(self):
+        """Test user can not update others status"""
+
+        payload = {
+            'username': 'random_user',
+            'email': 'test@email.com',
+            'password': 'superSecurePassword',
+        }
+        random_user = create_user(**payload)
+        self.client.force_authenticate(user=random_user)
+
+        data = {
+            "status_content": "your id is hacked!!"
+        }
+        res = self.client.put(reverse('status-detail', kwargs={'pk': 1}),
+                              data=data)
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
